@@ -1,6 +1,8 @@
 import os
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings 
+
+
 
 from core_logic import (
     load_documents, 
@@ -11,6 +13,16 @@ from core_logic import (
 ) 
 
 load_dotenv()
+
+if not os.getenv("GOOGLE_API_KEY"):
+    raise ValueError("GOOGLE_API_KEY environment variable is not set.")
+
+
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.5-flash",
+    api_key=os.getenv("GOOGLE_API_KEY")
+
+)
 
 if __name__ == "__main__":
     vector_db_path = os.getenv("VECTOR_DB_DIR")
@@ -26,11 +38,8 @@ if __name__ == "__main__":
         
     retriever = load_retriever(vectorstore_path=vector_db_path)
     # Use online model like Gemini instead of local LLM
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro", api_key=os.getenv("GOOGLE_API_KEY"))
-
-    if not local_llm_url:
-        raise ValueError("LOCAL_LLM_URL environment variable is not set.")
-    rag_chain = create_rag_chain(retriever=retriever, local_llm_url=local_llm_url)
+    
+    rag_chain = create_rag_chain(retriever=retriever, llm=llm)
     while True:
         query = input("Enter your question (or type 'exit' to quit): ")
         if query.lower() == "exit":
